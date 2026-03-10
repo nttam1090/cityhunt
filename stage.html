@@ -1,172 +1,362 @@
 <!doctype html>
 <html lang="zh-HK">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>City Hunt｜景峰花園測試</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>City Hunt｜杜甫文化挑戰</title>
 
-  <style>
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Arial, sans-serif;
-      background:#0b1220;
-      color:#fff;
-      min-height:100vh;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      padding:16px;
-    }
-    .card{
-      background:#121a2b;
-      border-radius:16px;
-      padding:18px;
-      width:100%;
-      max-width:420px;
-      box-shadow:0 10px 30px rgba(0,0,0,.4);
-    }
-    h1{font-size:22px;margin:0 0 10px}
-    p{line-height:1.5}
-    .badge{
-      display:inline-block;
-      padding:6px 10px;
-      border-radius:999px;
-      background:rgba(255,255,255,.1);
-      font-size:12px;
-      margin-bottom:10px;
-    }
-    button{
-      width:100%;
-      padding:14px;
-      margin-top:12px;
-      border:none;
-      border-radius:12px;
-      font-size:16px;
-      font-weight:700;
-      background:#60a5fa;
-      color:#000;
-    }
-    input{
-      width:100%;
-      padding:12px;
-      border-radius:10px;
-      border:none;
-      margin-top:10px;
-      font-size:16px;
-    }
-    img{
-      width:100%;
-      border-radius:12px;
-      margin:10px 0;
-    }
-    .hidden{display:none}
-    .ok{color:#2dd4bf}
-    .bad{color:#fb7185}
-  </style>
+<style>
+body{
+margin:0;
+font-family:system-ui,-apple-system,Arial,sans-serif;
+background:#0b1220;
+color:#fff;
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+padding:16px;
+}
+
+.card{
+background:#121a2b;
+border-radius:16px;
+padding:20px;
+width:100%;
+max-width:460px;
+box-shadow:0 10px 30px rgba(0,0,0,.4);
+}
+
+h1{font-size:22px;margin:0 0 10px}
+
+.badge{
+display:inline-block;
+padding:6px 10px;
+border-radius:999px;
+background:rgba(255,255,255,.1);
+font-size:12px;
+margin-bottom:10px;
+}
+
+button{
+width:100%;
+padding:14px;
+margin-top:12px;
+border:none;
+border-radius:12px;
+font-size:16px;
+font-weight:700;
+background:#60a5fa;
+color:#000;
+cursor:pointer;
+}
+
+.choice{
+display:block;
+width:100%;
+text-align:left;
+padding:12px;
+margin-top:10px;
+border-radius:10px;
+background:rgba(255,255,255,.05);
+border:1px solid rgba(255,255,255,.1);
+color:white;
+}
+
+.choice.selected{
+background:#60a5fa;
+color:black;
+}
+
+.ok{color:#2dd4bf}
+.bad{color:#fb7185}
+.hidden{display:none}
+
+.progress{
+margin-top:18px;
+padding:12px;
+background:rgba(255,255,255,.05);
+border-radius:10px;
+}
+
+</style>
 </head>
 
 <body>
-  <div class="card">
-    <span class="badge">📍 測試關卡：屯門景峰花園</span>
 
-    <h1>City Hunt｜任務 1</h1>
+<div class="card">
 
-    <p id="status">
-      請按「開始定位」，並允許位置權限。
-    </p>
+<span class="badge" id="stageName">載入中...</span>
 
-    <button onclick="startGPS()">📡 開始定位</button>
+<h1>City Hunt｜杜甫挑戰</h1>
 
-    <div id="quiz" class="hidden">
-      <hr style="margin:16px 0;opacity:.2">
+<p id="status">請先到達指定地點再開始定位。</p>
 
-      <p><strong>任務：</strong><br>
-      對照下面張相，並觀察你而家身處嘅地方。</p>
+<button onclick="startGPS()">📡 開始定位</button>
 
-      <img src="https://upload.wikimedia.org/wikipedia/commons/6/63/Kingswood_Villas_Tuen_Mun.jpg">
+<div id="quiz" class="hidden">
 
-      <p>
-        問題：<br>
-        景峰花園住宅外牆主要屬於咩顏色系？
-        <br><small>（提示：唔係白色）</small>
-      </p>
+<p id="question"></p>
 
-      <input id="answer" placeholder="輸入答案（例如：啡色）">
+<div id="choices"></div>
 
-      <button onclick="checkAnswer()">✅ 提交答案</button>
+<button onclick="checkAnswer()">提交答案</button>
 
-      <p id="feedback"></p>
-    </div>
-  </div>
+<p id="feedback"></p>
+
+</div>
+
+<div class="progress">
+
+<strong>任務進度</strong>
+
+<ul id="progressList"></ul>
+
+</div>
+
+</div>
 
 <script>
-/* ===== 設定（你唔需要改） ===== */
-const TARGET_LAT = 22.4012;   // 景峰花園
-const TARGET_LNG = 113.9697;
-const RADIUS = 2000;           // 2000 米解鎖
+
+const stages=[
+
+{
+name:"胡忠大廈",
+lat:22.27747,
+lng:114.17309,
+radius:200,
+question:"以下哪一首是杜甫的作品？",
+choices:["靜夜思","春望","將進酒","相思"],
+answer:1
+},
+
+{
+name:"合和中心",
+lat:22.27658,
+lng:114.17172,
+radius:200,
+question:"以下哪一句出自杜甫《春望》？",
+choices:[
+"國破山河在，城春草木深",
+"床前明月光，疑是地上霜",
+"白日依山盡，黃河入海流",
+"長風破浪會有時"
+],
+answer:0
+},
+
+{
+name:"灣仔地鐵站",
+lat:22.27795,
+lng:114.17571,
+radius:200,
+question:"杜甫被後世稱為什麼？",
+choices:["詩仙","詩鬼","詩聖","詩佛"],
+answer:2
+},
+
+{
+name:"喜帖街",
+lat:22.27620,
+lng:114.17295,
+radius:200,
+question:"以下哪一首是杜甫的名作？",
+choices:["登高","黃鶴樓","遊子吟","早發白帝城"],
+answer:0
+}
+
+]
+
+let current=0
+let selected=null
+let finished=new Array(stages.length).fill(false)
+
+function renderStage(){
+
+const s=stages[current]
+
+document.getElementById("stageName").innerText="📍 "+s.name
+
+document.getElementById("status").innerText="到達 "+s.name+" 後按開始定位"
+
+document.getElementById("question").innerText=s.question
+
+const c=document.getElementById("choices")
+
+c.innerHTML=""
+
+s.choices.forEach((t,i)=>{
+
+let btn=document.createElement("button")
+
+btn.className="choice"
+
+btn.innerText=String.fromCharCode(65+i)+". "+t
+
+btn.onclick=()=>selectChoice(i)
+
+c.appendChild(btn)
+
+})
+
+document.getElementById("quiz").classList.add("hidden")
+
+updateProgress()
+
+}
+
+function selectChoice(i){
+
+selected=i
+
+document.querySelectorAll(".choice").forEach((b,index)=>{
+
+b.classList.toggle("selected",index===i)
+
+})
+
+}
 
 function startGPS(){
-  if(!navigator.geolocation){
-    document.getElementById("status").innerHTML =
-      "<span class='bad'>❌ 呢部手機唔支援 GPS</span>";
-    return;
-  }
 
-  document.getElementById("status").innerText = "📡 定位中，請稍等…";
+const s=stages[current]
 
-  navigator.geolocation.getCurrentPosition(
-    pos=>{
-      const d = distance(
-        pos.coords.latitude,
-        pos.coords.longitude,
-        TARGET_LAT,
-        TARGET_LNG
-      );
+navigator.geolocation.getCurrentPosition(pos=>{
 
-      if(d <= RADIUS){
-        document.getElementById("status").innerHTML =
-          "<span class='ok'>✅ 已到達景峰花園範圍，任務解鎖！</span>";
-        document.getElementById("quiz").classList.remove("hidden");
-      }else{
-        document.getElementById("status").innerHTML =
-          "未到達目標位置，仲有 <strong>" + Math.round(d) +
-          " 米</strong><br>（請行近少少）";
-      }
-    },
-    ()=>{
-      document.getElementById("status").innerHTML =
-        "<span class='bad'>❌ 定位失敗，請確認已允許位置權限</span>";
-    },
-    { enableHighAccuracy:true, timeout:12000 }
-  );
+let d=distance(
+
+pos.coords.latitude,
+
+pos.coords.longitude,
+
+s.lat,
+
+s.lng
+
+)
+
+if(d<=s.radius){
+
+document.getElementById("status").innerHTML="<span class='ok'>已到達 "+s.name+" 任務解鎖</span>"
+
+document.getElementById("quiz").classList.remove("hidden")
+
+}
+
+else{
+
+document.getElementById("status").innerHTML="距離目標約 "+Math.round(d)+" 米"
+
+}
+
+})
+
 }
 
 function checkAnswer(){
-  const v = document.getElementById("answer").value.trim().toLowerCase();
-  const okAnswers = ["啡色","棕色","灰色","深色","brown","grey","gray"];
 
-  if(okAnswers.includes(v)){
-    document.getElementById("feedback").innerHTML =
-      "<span class='ok'>🎉 正確！你已完成測試任務。</span>";
-  }else{
-    document.getElementById("feedback").innerHTML =
-      "<span class='bad'>❌ 未正確，再觀察下周圍建築物先答～</span>";
-  }
+if(selected===null){
+
+document.getElementById("feedback").innerHTML="<span class='bad'>請先選擇答案</span>"
+
+return
+
 }
 
-/* 距離計算（米） */
+if(selected===stages[current].answer){
+
+finished[current]=true
+
+document.getElementById("feedback").innerHTML="<span class='ok'>答對！</span>"
+
+current++
+
+if(current>=stages.length){
+
+document.getElementById("status").innerHTML="<span class='ok'>🏆 恭喜完成所有任務</span>"
+
+document.getElementById("quiz").classList.add("hidden")
+
+}
+
+else{
+
+setTimeout(renderStage,1200)
+
+}
+
+}
+
+else{
+
+document.getElementById("feedback").innerHTML="<span class='bad'>答案不正確</span>"
+
+}
+
+updateProgress()
+
+}
+
+function updateProgress(){
+
+const list=document.getElementById("progressList")
+
+list.innerHTML=""
+
+stages.forEach((s,i)=>{
+
+let li=document.createElement("li")
+
+if(finished[i]){
+
+li.innerText="✅ "+s.name
+
+}
+
+else if(i===current){
+
+li.innerText="📍 "+s.name+"（目前）"
+
+}
+
+else{
+
+li.innerText="⏳ "+s.name
+
+}
+
+list.appendChild(li)
+
+})
+
+}
+
 function distance(lat1,lng1,lat2,lng2){
-  const R=6371000;
-  const dLat=(lat2-lat1)*Math.PI/180;
-  const dLng=(lng2-lng1)*Math.PI/180;
-  const a=
-    Math.sin(dLat/2)**2 +
-    Math.cos(lat1*Math.PI/180) *
-    Math.cos(lat2*Math.PI/180) *
-    Math.sin(dLng/2)**2;
-  return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+
+const R=6371000
+
+const dLat=(lat2-lat1)*Math.PI/180
+
+const dLng=(lng2-lng1)*Math.PI/180
+
+const a=
+
+Math.sin(dLat/2)**2+
+
+Math.cos(lat1*Math.PI/180)*
+
+Math.cos(lat2*Math.PI/180)*
+
+Math.sin(dLng/2)**2
+
+return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))
+
 }
+
+renderStage()
+
 </script>
+
 </body>
 </html>
 
