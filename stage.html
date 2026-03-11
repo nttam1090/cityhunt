@@ -6,6 +6,7 @@
 <title>City Hunt｜杜甫文化挑戰</title>
 
 <style>
+
 body{
 margin:0;
 font-family:system-ui,-apple-system,Arial,sans-serif;
@@ -79,6 +80,36 @@ background:rgba(255,255,255,.05);
 border-radius:10px;
 }
 
+.progress-label{
+display:flex;
+justify-content:space-between;
+font-size:14px;
+margin-bottom:6px;
+}
+
+.progress-bar-wrap{
+height:12px;
+background:rgba(255,255,255,.12);
+border-radius:999px;
+overflow:hidden;
+}
+
+.progress-bar{
+height:100%;
+width:0%;
+background:#2dd4bf;
+transition:width .4s;
+}
+
+#progressList{
+margin-top:10px;
+padding-left:18px;
+}
+
+#progressList li{
+margin:6px 0;
+}
+
 </style>
 </head>
 
@@ -89,6 +120,21 @@ border-radius:10px;
 <span class="badge" id="stageName">載入中...</span>
 
 <h1>City Hunt｜杜甫挑戰</h1>
+
+<div class="progress">
+
+<div class="progress-label">
+<span>完成進度</span>
+<span id="progressPercent">0%</span>
+</div>
+
+<div class="progress-bar-wrap">
+<div class="progress-bar" id="progressBar"></div>
+</div>
+
+<ul id="progressList"></ul>
+
+</div>
 
 <p id="status">請先到達指定地點再開始定位。</p>
 
@@ -106,14 +152,6 @@ border-radius:10px;
 
 </div>
 
-<div class="progress">
-
-<strong>任務進度</strong>
-
-<ul id="progressList"></ul>
-
-</div>
-
 </div>
 
 <script>
@@ -122,9 +160,9 @@ const stages=[
 
 {
 name:"胡忠大廈",
-lat:22.27747,
-lng:114.17309,
-radius:200,
+lat:22.27454,
+lng:114.17330,
+radius:500,
 question:"以下哪一首是杜甫的作品？",
 choices:["靜夜思","春望","將進酒","相思"],
 answer:1
@@ -132,9 +170,9 @@ answer:1
 
 {
 name:"合和中心",
-lat:22.27658,
-lng:114.17172,
-radius:200,
+lat:22.2714,
+lng:114.1696,
+radius:500,
 question:"以下哪一句出自杜甫《春望》？",
 choices:[
 "國破山河在，城春草木深",
@@ -146,10 +184,10 @@ answer:0
 },
 
 {
-name:"灣仔地鐵站",
-lat:22.27795,
-lng:114.17571,
-radius:200,
+name:"灣仔地鐵站 (A3出口)",
+lat:22.27745,
+lng:114.17335,
+radius:500,
 question:"杜甫被後世稱為什麼？",
 choices:["詩仙","詩鬼","詩聖","詩佛"],
 answer:2
@@ -157,9 +195,9 @@ answer:2
 
 {
 name:"喜帖街",
-lat:22.27620,
-lng:114.17295,
-radius:200,
+lat:22.27621,
+lng:114.17290,
+radius:500,
 question:"以下哪一首是杜甫的名作？",
 choices:["登高","黃鶴樓","遊子吟","早發白帝城"],
 answer:0
@@ -173,11 +211,20 @@ let finished=new Array(stages.length).fill(false)
 
 function renderStage(){
 
+if(current>=stages.length) return
+
 const s=stages[current]
+
+selected=null
 
 document.getElementById("stageName").innerText="📍 "+s.name
 
+if(s.name.includes("灣仔")){
+document.getElementById("status").innerText="請到灣仔地鐵站 A3 出口附近再定位"
+}
+else{
 document.getElementById("status").innerText="到達 "+s.name+" 後按開始定位"
+}
 
 document.getElementById("question").innerText=s.question
 
@@ -221,7 +268,9 @@ function startGPS(){
 
 const s=stages[current]
 
-navigator.geolocation.getCurrentPosition(pos=>{
+navigator.geolocation.getCurrentPosition(
+
+pos=>{
 
 let d=distance(
 
@@ -249,7 +298,21 @@ document.getElementById("status").innerHTML="距離目標約 "+Math.round(d)+" �
 
 }
 
-})
+},
+
+()=>{
+
+document.getElementById("status").innerHTML="<span class='bad'>定位失敗，請允許 GPS</span>"
+
+},
+
+{
+enableHighAccuracy:true,
+timeout:12000,
+maximumAge:10000
+}
+
+)
 
 }
 
@@ -257,7 +320,7 @@ function checkAnswer(){
 
 if(selected===null){
 
-document.getElementById("feedback").innerHTML="<span class='bad'>請先選擇答案</span>"
+document.getElementById("feedback").innerHTML="<span class='bad'>請先選答案</span>"
 
 return
 
@@ -273,7 +336,9 @@ current++
 
 if(current>=stages.length){
 
-document.getElementById("status").innerHTML="<span class='ok'>🏆 恭喜完成所有任務</span>"
+document.getElementById("stageName").innerText="🏆 全部完成"
+
+document.getElementById("status").innerHTML="<span class='ok'>恭喜完成 City Hunt</span>"
 
 document.getElementById("quiz").classList.add("hidden")
 
@@ -289,7 +354,7 @@ setTimeout(renderStage,1200)
 
 else{
 
-document.getElementById("feedback").innerHTML="<span class='bad'>答案不正確</span>"
+document.getElementById("feedback").innerHTML="<span class='bad'>答案錯誤</span>"
 
 }
 
@@ -315,7 +380,7 @@ li.innerText="✅ "+s.name
 
 else if(i===current){
 
-li.innerText="📍 "+s.name+"（目前）"
+li.innerText="📍 "+s.name+" (目前)"
 
 }
 
@@ -328,6 +393,14 @@ li.innerText="⏳ "+s.name
 list.appendChild(li)
 
 })
+
+let done=finished.filter(x=>x).length
+
+let percent=Math.round(done/stages.length*100)
+
+document.getElementById("progressPercent").innerText=percent+"%"
+
+document.getElementById("progressBar").style.width=percent+"%"
 
 }
 
@@ -359,4 +432,3 @@ renderStage()
 
 </body>
 </html>
-
